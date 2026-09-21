@@ -40,11 +40,12 @@ single-thread and all-cores targets.
 
 ## Post-release notes
 
-- **CI fix (unreleased).** GitLab pipeline image now installs `git` and
+- **CI fix (released in 0.1.1).** GitLab pipeline image now installs `git` and
   `ca-certificates` so GoogleTest fetches via CMake FetchContent; configure-time
   build failure resolved. No code/behavior change. See [CHANGELOG.md](../CHANGELOG.md).
 
 ## Next step
 
-PM to run the final version bump + annotated tag via the
-`semver-version-publish` workflow (VERSION already reads 0.1.0).
+Released: `v0.1.1` (patch) — GitLab CI reliability fix. Tags `v0.1.0` and
+`v0.1.1` are published locally via the `semver-version-publish` workflow;
+VERSION reads 0.1.1.
