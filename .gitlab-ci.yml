@@ -1,0 +1,38 @@
+# GitLab CI mirror of the GitHub Actions gate: configure -> build -> ctest.
+# Minimal stages (build, test) per the org convention. The unit tests need no
+# MNIST data or ONNX/SVM models, so this pipeline is self-contained.
+
+stages:
+  - build
+  - test
+
+variables:
+  BUILD_TYPE: "Release"
+  DEBIAN_FRONTEND: "noninteractive"
+
+# Ubuntu image with apt; deps installed per job for a reproducible, free-tier run.
+default:
+  image: ubuntu:24.04
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends
+        build-essential cmake ninja-build libopencv-dev
+
+build:
+  stage: build
+  script:
+    - cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+    - cmake --build build --config $BUILD_TYPE --parallel
+    - cmake --build build --target package
+  artifacts:
+    # Pass the build tree (with GoogleTest already built) and the package to test.
+    paths:
+      - build/
+      - build/EdgeInferenceBenchmark-*.tar.gz
+    expire_in: 1 hour
+
+test:
+  stage: test
+  needs: [build]
+  script:
+    - ctest --test-dir build --output-on-failure

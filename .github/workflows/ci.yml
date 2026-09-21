@@ -1,0 +1,61 @@
+name: CI
+
+# Required gate: configure -> build -> unit tests (ctest).
+# The unit tests do NOT need the MNIST dataset or ONNX/SVM models, so this
+# job is fully self-contained and stays green without provisioned artifacts.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref to save free-tier minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & unit tests (Ubuntu, Release)
+    runs-on: ubuntu-latest
+    env:
+      BUILD_TYPE: Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake ninja-build libopencv-dev
+
+      # Cache the CMake build tree so the FetchContent GoogleTest build is
+      # reused across runs. Keyed on the test CMake inputs; falls back to the
+      # latest partial cache for the same OS.
+      - name: Cache build tree (GoogleTest via FetchContent)
+        uses: actions/cache@v4
+        with:
+          path: build
+          key: ${{ runner.os }}-build-${{ hashFiles('tests/CMakeLists.txt', 'CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-build-
+
+      - name: Configure (Release)
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+
+      - name: Build all targets
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+
+      - name: Run unit tests (ctest, required gate)
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Build package (TGZ)
+        run: cmake --build build --target package
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-inference-benchmark-package
+          path: build/EdgeInferenceBenchmark-*.tar.gz
+          if-no-files-found: error

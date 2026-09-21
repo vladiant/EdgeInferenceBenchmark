@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.20)
-project(EdgeInferenceBenchmark LANGUAGES CXX)
+
+# Single source of truth for the release version: the top-level VERSION file.
+# The PM/release process bumps this via the semver-version-publish workflow.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" EIB_VERSION LIMIT_COUNT 1)
+string(STRIP "${EIB_VERSION}" EIB_VERSION)
+
+project(EdgeInferenceBenchmark
+    VERSION ${EIB_VERSION}
+    LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -58,3 +66,33 @@ if(EIB_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+# ---------------------------------------------------------------------------
+# Install rules (packaging inputs only: app binary + license + docs).
+# Data/model artifacts are provisioned locally and intentionally NOT packaged.
+# ---------------------------------------------------------------------------
+include(GNUInstallDirs)
+
+install(TARGETS edge_inference_benchmark
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE"
+    DESTINATION ${CMAKE_INSTALL_DOCDIR})
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/docs/"
+    DESTINATION ${CMAKE_INSTALL_DOCDIR})
+
+# ---------------------------------------------------------------------------
+# CPack: produce a simple, portable source-independent binary tarball (TGZ).
+#   cmake --build build --target package     # or: cpack from the build tree
+# ---------------------------------------------------------------------------
+set(CPACK_PACKAGE_NAME "EdgeInferenceBenchmark")
+set(CPACK_PACKAGE_VENDOR "EdgeInferenceBenchmark")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY
+    "Edge inference benchmark harness (classical vs CNN on MNIST)")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_PACKAGE_FILE_NAME
+    "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
+include(CPack)
