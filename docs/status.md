@@ -38,6 +38,12 @@ single-thread and all-cores targets.
   random-weights fallback) and independently re-verified by QA. No open defects
   remain.
 
+## Post-release notes
+
+- **CI fix (unreleased).** GitLab pipeline image now installs `git` and
+  `ca-certificates` so GoogleTest fetches via CMake FetchContent; configure-time
+  build failure resolved. No code/behavior change. See [CHANGELOG.md](../CHANGELOG.md).
+
 ## Next step
 
 PM to run the final version bump + annotated tag via the
