@@ -15,8 +15,10 @@ default:
   image: ubuntu:24.04
   before_script:
     - apt-get update
+    # git + ca-certificates are required for CMake FetchContent to clone
+    # GoogleTest over HTTPS; the minimal ubuntu:24.04 image ships neither.
     - apt-get install -y --no-install-recommends
-        build-essential cmake ninja-build libopencv-dev
+        build-essential cmake ninja-build libopencv-dev git ca-certificates
 
 build:
   stage: build
