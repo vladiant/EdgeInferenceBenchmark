@@ -67,3 +67,15 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# EIB: dataset, model artifacts, and run outputs (provisioned locally, not committed)
+data/*
+!data/README.md
+models/*
+!models/README.md
+out/
+*.idx3-ubyte
+*.idx1-ubyte
+*-idx3-ubyte
+*-idx1-ubyte
+*.onnx
