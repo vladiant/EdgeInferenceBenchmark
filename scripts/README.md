@@ -40,15 +40,22 @@ stays compatible with `ClassicalClassifier` (design gap G-2).
 
 ## 3. CNN model — `export_lenet.py`
 
-Exports a LeNet-style MNIST CNN to `models/mnist_lenet.onnx`. Requires
-`torch`/`onnx`; if they are unavailable it prints clear instructions and exits
-non-zero **without** breaking anything else. The benchmark app degrades
-gracefully when the ONNX model is absent (the CNN method is skipped with a
-warning).
+**Trains** a LeNet-style CNN on the MNIST training split (read directly from the
+IDX files in `data/`) and only then exports `models/mnist_lenet.onnx`. It prints
+the achieved train/test accuracy for provenance and reaches ~98% test accuracy
+in a few CPU epochs.
+
+There is **no** silent random-weights fallback: if `torch`/`onnx` are missing,
+the MNIST data is absent/synthetic, or the trained test accuracy falls below
+`--min-accuracy` (default 0.97), the script **fails loudly** (non-zero exit)
+with an actionable message instead of emitting a useless model. The benchmark
+app still degrades gracefully when the ONNX model is simply absent (the CNN
+method is skipped with a warning).
 
 ```bash
-pip install torch torchvision onnx
-python3 scripts/export_lenet.py --out models/mnist_lenet.onnx --epochs 1
+pip install torch onnx
+python3 scripts/prepare_data.py            # obtain the real MNIST IDX files first
+python3 scripts/export_lenet.py --out models/mnist_lenet.onnx --epochs 3
 ```
 
 ## End-to-end
